@@ -1,57 +1,80 @@
-import pandas as pd
+import os
+import sys
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, to_timestamp, regexp_replace, date_trunc, sum, mean
 
-# Configuration des fichiers
-fichier_entree = './CSVs/eau_converted.csv'
-fichier_sortie = './CSVs/eau_processed.csv'
+# --- CONFIGURATION JAVA ---
+# On garde cette configuration indispensable pour votre environnement
+os.environ['PYSPARK_SUBMIT_ARGS'] = (
+    "--driver-java-options '--add-opens=java.base/java.lang=ALL-UNNAMED "
+    "--add-opens=java.base/java.util=ALL-UNNAMED "
+    "--add-opens=java.base/java.nio=ALL-UNNAMED' pyspark-shell"
+)
 
-# 1. Chargement des données
-# On précise le séparateur ';' utilisé dans votre fichier
-df = pd.read_csv(fichier_entree, sep=';')
+# --- CONFIGURATION DES CHEMINS ---
+# Nom du dossier cible
+nom_dossier = "CSVs"
 
-# 2. Nettoyage et conversion des types
-# Conversion de la colonne 'horodate' en format date/heure
-df['horodate'] = pd.to_datetime(df['horodate'])
+# On construit les chemins complets compatibles Windows/Linux
+# Fichier d'entrée : CSVs/eau_converted.csv
+chemin_entree = os.path.join(nom_dossier, "eau_converted.csv")
 
-# Conversion de la colonne 'pluie_mm' en nombres (remplacement de la virgule par un point)
-# Cette étape gère le format français des nombres (ex: "0,1" -> 0.1)
-if df['pluie_mm'].dtype == 'object':
-    df['pluie_mm'] = df['pluie_mm'].astype(str).str.replace(',', '.').astype(float)
+# Fichiers de sortie
+chemin_sortie_horaire = os.path.join(nom_dossier, "eau_horaire.csv")
+chemin_sortie_moyenne = os.path.join(nom_dossier, "eau_horaire_moyenne.csv")
 
-# 3. Tri des données
-# Il est crucial que les données soient triées par identifiant puis par date
-df = df.sort_values(by=['identifiant', 'horodate'])
+# Petit contrôle de sécurité pour vérifier que le dossier existe
+if not os.path.exists(nom_dossier):
+    print(f"ATTENTION : Le dossier '{nom_dossier}' n'existe pas dans le répertoire courant.")
+    print("Veuillez créer le dossier 'CSVs' et y placer votre fichier 'eau_converted.csv'.")
+    sys.exit(1)
 
-# 4. Détection des "trous"
-# On calcule le temps écoulé depuis la ligne précédente pour chaque identifiant
-df['prev_horodate'] = df.groupby('identifiant')['horodate'].shift(1)
-df['diff'] = df['horodate'] - df['prev_horodate']
+# --- DEBUT DU TRAITEMENT SPARK ---
+spark = SparkSession.builder \
+    .appName("AnalysePluie") \
+    .getOrCreate()
 
-# On définit le seuil d'une heure
-seuil = pd.Timedelta(hours=1)
+print(f"Lecture du fichier : {chemin_entree}")
 
-# On filtre les lignes où l'écart est supérieur à 1 heure
-mask_gaps = df['diff'] > seuil
+try:
+    # 1. Chargement
+    df = spark.read \
+        .option("header", "true") \
+        .option("delimiter", ";") \
+        .csv(chemin_entree)
 
-# 5. Création des nouvelles lignes à insérer
-# Pour chaque trou détecté, on crée une ligne 1h après la mesure précédente
-lignes_ajout = df[mask_gaps].copy()
-lignes_ajout['horodate'] = lignes_ajout['prev_horodate'] + seuil
-lignes_ajout['pluie_mm'] = 0.0
+    # 2. Nettoyage
+    print("Nettoyage et conversion des données...")
+    df_clean = df \
+        .withColumn("horodate", to_timestamp(col("horodate"))) \
+        .withColumn("pluie_mm", regexp_replace(col("pluie_mm"), ",", ".").cast("double")) \
+        .withColumn("date_heure", date_trunc("hour", col("horodate")))
 
-# On ne garde que les colonnes utiles
-cols = ['identifiant', 'horodate', 'pluie_mm']
-df_base = df[cols]
-df_ajout_clean = lignes_ajout[cols]
+    # 3. Calcul : Somme par identifiant
+    print("Calcul des sommes par identifiant...")
+    df_horaire_spark = df_clean.groupBy("identifiant", "date_heure") \
+        .agg(sum("pluie_mm").alias("pluie_somme")) \
+        .orderBy("identifiant", "date_heure")
 
-# 6. Fusion et sauvegarde
-# On ajoute les nouvelles lignes au dataframe original
-df_final = pd.concat([df_base, df_ajout_clean])
+    # 4. Calcul : Moyenne globale
+    print("Calcul de la moyenne globale...")
+    df_moyenne_spark = df_clean.groupBy("date_heure") \
+        .agg(mean("pluie_mm").alias("pluie_moyenne")) \
+        .orderBy("date_heure")
 
-# On retrie le tout pour insérer les nouvelles lignes au bon endroit chronologique
-df_final = df_final.sort_values(by=['identifiant', 'horodate'])
+    # 5. Sauvegarde en CSV unique (via Pandas)
+    print(f"Sauvegarde dans le dossier '{nom_dossier}'...")
 
-# Export du résultat en CSV (avec séparateur point-virgule et virgule pour les décimales)
-df_final.to_csv(fichier_sortie, sep=';', decimal=',', index=False)
+    # Conversion en Pandas et écriture dans le dossier CSVs
+    df_horaire_spark.toPandas().to_csv(chemin_sortie_horaire, sep=";", decimal=",", index=False)
+    df_moyenne_spark.toPandas().to_csv(chemin_sortie_moyenne, sep=";", decimal=",", index=False)
 
-print(f"Traitement terminé. {len(df_ajout_clean)} lignes ont été ajoutées.")
-print(f"Fichier sauvegardé sous : {fichier_sortie}")
+    print("Traitement terminé avec succès !")
+    print(f"Fichiers générés :\n - {chemin_sortie_horaire}\n - {chemin_sortie_moyenne}")
+
+except Exception as e:
+    print("Une erreur est survenue lors du traitement :")
+    print(e)
+
+finally:
+    spark.stop()
