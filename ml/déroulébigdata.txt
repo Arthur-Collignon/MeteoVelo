@@ -1,0 +1,39 @@
+partie ML
+
+J'ai créé un notebook pour l'exploration des données 
+
+avec un describe on a  - Moyenne : 27 vélos/heure
+  - Max : 1008 vélos/heure (probablement un point chaud comme berge du Rhône)
+  - Médiane : 8 vélos/heure
+  - 25% des mesures : ≤ 1 vélo/heure (sites peu fréquentés ou heures creuses)
+
+La température est en format texte avec virgule : "14,75" au lieu de 14.75
+  → Il faut convertir en float avant calculs
+
+Même problème que température : "0,1" au lieu de 0.1 
+
+Pour le problème des jours sans pluie dans le dataset de précipitations, je vais faire un leftjoin pour garder TOUS les jours vélo
+et on va faire un fillna(0) pour avoir 0mm de précipitations sur les jours sans pluie 
+
+partie fusion des données  : 
+- Corrige le problème des virgules : "14,75" → 14.75
+  - Convertit toutes les dates en datetime
+
+Agrégation par Heure
+ Fusion avec LEFT JOIN -  Garde TOUTES les heures du dataset vélo
+  - Ajoute température et pluie correspondantes
+
+ Gestion des NaN
+
+Visualisation 
+Évolution du trafic vélo dans le temps
+  - Graphiques température/pluie
+  - Matrice de corrélation (voir l'impact météo !)
+
+créer le fichier data_merged.csv
+
+
+Trafic Vélo (Total Lyon) :
+  - Maximum : 44,073 vélos/heure (probablement 18h un jour de beau temps !)
+  - Minimum : 225 vélos/heure (probablement 3h du matin)
+  - Moyenne : 10,073 vélos/heure
