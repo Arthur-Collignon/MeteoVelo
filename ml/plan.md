@@ -1,11 +1,11 @@
 # Plan Machine Learning - MeteoVelo
 
-## 🎯 Objectif
+## Objectif
 Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des conditions météorologiques et temporelles.
 
 ---
 
-## 📋 Étape 1: Exploration des Données (EDA)
+## Étape 1: Exploration des Données (EDA)
 
 ### 1.1 Chargement et Inspection
 - [ ] Charger les 3 datasets:
@@ -30,7 +30,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 📊 Étape 2: Préparation et Fusion des Données
+## Étape 2: Préparation et Fusion des Données
 
 ### 2.1 Prétraitement des Données Vélo
 - [ ] Convertir les dates au bon format (datetime)
@@ -58,7 +58,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 🔧 Étape 3: Feature Engineering
+## Étape 3: Feature Engineering
 
 ### 3.1 Features Temporelles
 - [ ] `hour` : Heure de la journée (0-23)
@@ -82,7 +82,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 🤖 Étape 4: Modélisation
+## Étape 4: Modélisation
 
 ### 4.1 Préparation des Données
 - [ ] Séparer Features (X) et Target (y)
@@ -115,7 +115,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 📈 Étape 5: Évaluation et Analyse
+## Étape 5: Évaluation et Analyse
 
 ### 5.1 Comparaison des Modèles
 - [ ] Tableau comparatif des métriques (MAE, RMSE, R²)
@@ -135,7 +135,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 📊 Étape 6: Visualisations et Insights
+## Étape 6: Visualisations et Insights
 
 ### 6.1 Graphiques Clés
 - [ ] Corrélation Heatmap (toutes les variables)
@@ -152,7 +152,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 🚀 Étape 7: Sauvegarde et Documentation
+## Étape 7: Sauvegarde et Documentation
 
 ### 7.1 Sauvegarder les Résultats
 - [ ] Exporter le dataset final: `data_merged.csv`
@@ -174,7 +174,7 @@ Créer un modèle prédictif pour estimer le volume de cyclistes en fonction des
 
 ---
 
-## 🛠️ Technologies et Bibliothèques
+## Technologies et Bibliothèques
 
 ```python
 # Data manipulation
@@ -199,7 +199,7 @@ import json
 
 ---
 
-## 📅 Ordre de Priorité
+## Ordre de Priorité
 
 1. **Phase 1 (Fondations):** Étapes 1 + 2 → Avoir un dataset propre et fusionné
 2. **Phase 2 (Features):** Étape 3 → Créer les features temporelles et météo
@@ -209,7 +209,7 @@ import json
 
 ---
 
-## ✅ Critères de Succès
+## Critères de Succès
 
 - [ ] Dataset fusionné propre et exploitable
 - [ ] Au moins 2 modèles fonctionnels (Linear + Random Forest)
@@ -219,7 +219,7 @@ import json
 
 ---
 
-## 💡 Questions à Résoudre en Cours de Route
+## Questions à Résoudre en Cours de Route
 
 1. Quel pas de temps utiliser? (heure vs jour)
 2. Comment gérer les compteurs multiples? (agrégation spatiale)
